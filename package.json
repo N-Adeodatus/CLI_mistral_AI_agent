@@ -12,6 +12,7 @@
     "vite": "^6.2.0"
   },
   "dependencies": {
-    "@mistralai/mistralai": "^1.5.1"
+    "@mistralai/mistralai": "^1.5.1",
+    "dotenv": "^16.4.7"
   }
 }
