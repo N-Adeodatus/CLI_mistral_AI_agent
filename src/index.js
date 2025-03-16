@@ -12,42 +12,36 @@ const mistralClient = new Mistral({apiKey: apiKey})
 
 // Function to create an interface to read and write data.
 let userInput
-let result = ''
+
 const messages = []
 const rw = readline.createInterface({
     input: process.stdin,
     output: process.stdout
 })
+// Interface to interact with the user.
 async function interactWithUser() {
-
-    
-        const prompt = await new Promise((resolve) => {
-            rw.question( "\nAsk AI: \n", (answer) => {
-                if(answer !== '') {
-                    resolve(answer)
-                } else {
-                    console.log("Please enter a prompt")
-                    interactWithUser()
-                }
-            })
+    const prompt = await new Promise((resolve) => {
+        rw.question( "\nAsk AI: \n", (answer) => {
+            if(answer !== '') {
+                resolve(answer)
+            } else {
+                console.log("Please enter a prompt")
+                interactWithUser()
+            }
         })
+    })
 
-        if(prompt.toLowerCase() === "exit"){
-            console.log("Good bye😊!")
-            rw.close()
-            return
-        }
+    if(prompt.toLowerCase() === "exit"){
+        console.log("Good bye😊!")
+        rw.close()
+        return
+    }
 
-        userInput = prompt
-        messages.push()
-        // Ensure the debounce function finishes before continuing
-        await generateResponse()
-        interactWithUser()
-    
-        
-    
-
-
+    userInput = prompt
+    messages.push()
+    // Ensure the debounce function finishes before continuing
+    await generateResponse()
+    interactWithUser()
 }
 interactWithUser()
 
@@ -60,16 +54,14 @@ async function agent(query) {
     
     //response from the agent.
     const response =  await mistralClient.chat.stream({
-        
         model: 'mistral-large-latest',
         messages: messages,
         stream: true
-    
-})
+    })
 
     // Handling the chunks of response
     try{
-        
+        let result = ''
         for await(const chunk of response){
             process.stdout.write(chunk.data.choices[0].delta.content)
             if(chunk.data.choices[0].finishReason === 'stop'){
