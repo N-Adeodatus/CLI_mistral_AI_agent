@@ -1,6 +1,7 @@
 import { Mistral } from "@mistralai/mistralai";
 import readline from "node:readline"
 import dotenv from "dotenv"
+import { read_shell_history, tools } from "./tools.js";
 
 dotenv.config()
 
@@ -14,6 +15,7 @@ const mistralClient = new Mistral({apiKey: apiKey})
 let userInput
 let result = ''
 const messages = []
+let availableFunctions = {read_shell_history}
 const rw = readline.createInterface({
     input: process.stdin,
     output: process.stdout
@@ -25,6 +27,7 @@ async function interactWithUser() {
             rw.question( "\nAsk AI: \n", (answer) => {
                 if(answer !== '') {
                     resolve(answer)
+                    console.log()
                 } else {
                     console.log("Please enter a prompt")
                     interactWithUser()
@@ -58,32 +61,48 @@ async function agent(query) {
     //     {role: 'user', content: query}
     // ]
     
-    //response from the agent.
-    const response =  await mistralClient.chat.stream({
-        
-        model: 'mistral-large-latest',
-        messages: messages,
-        stream: true
-    
-})
+    for (let i = 0; i < 5; i++){
 
-    // Handling the chunks of response
-    try{
+        //response from the agent.
+        const response =  await mistralClient.chat.stream({
+            
+            model: 'mistral-large-latest',
+            messages: messages,
+            tools: tools,
+            stream: true
         
-        for await(const chunk of response){
-            process.stdout.write(chunk.data.choices[0].delta.content)
-            if(chunk.data.choices[0].finishReason === 'stop'){
-                result += `${chunk.data.choices[0].delta.content}`
-                console.log()
-            } else {
-                result += chunk.data.choices[0].delta.content
+        })
+        console.log('called twice');
+        
+        // Handling the chunks of response
+        try{
+            
+            for await(const chunk of response){
+                if(chunk.data.choices[0].finishReason === 'stop'){
+                    process.stdout.write(chunk.data.choices[0].delta.content)
+                    result += `${chunk.data.choices[0].delta.content}`
+                    messages.push({role: 'assistant', content: result})
+                    console.log()
+                    return
+                } else if(chunk.data.choices[0].finishReason === 'tool_calls') {
+                    
+                    const functionObj = chunk.data.choices[0].delta.toolCalls[0].function
+                    const functionName = functionObj.name
+                    const functionArguments = JSON.parse(functionObj.arguments)
+                    const tool_call_id = chunk.data.choices[0].delta.toolCalls[0].id
+                    console.log(functionName)
+                    const resultFromTool = await availableFunctions[functionName](functionArguments)
+                    messages.push({role: 'system', content: resultFromTool, toolCallId: tool_call_id})
+                } else {
+                    process.stdout.write(chunk.data.choices[0].delta.content)
+                    result += chunk.data.choices[0].delta.content
+                }
             }
+             
         }
-        messages.push({role: 'assistant', content: result})
-        return result
-    }
-    catch(err){
-        console.error('An error occurred during handling the chunks of response:', err)
+        catch(err){
+            console.error('An error occurred during handling the chunks of response:', err)
+        }
     }
        
 }
