@@ -4,7 +4,7 @@ import dotenv from "dotenv"
 
 dotenv.config()
 
-const apiKey = process.env.VITE_MISTRAL_API
+const apiKey = "POjCwfVcJKDVERloIQnrmxndl1GeMjqb"
 console.log('Type "exit", ctrl+c or ctrl+d to exit');
 console.log('How can I Help?')
 
