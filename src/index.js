@@ -85,14 +85,14 @@ async function agent(query) {
                     console.log()
                     return
                 } else if(chunk.data.choices[0].finishReason === 'tool_calls') {
-                    
                     const functionObj = chunk.data.choices[0].delta.toolCalls[0].function
                     const functionName = functionObj.name
                     const functionArguments = JSON.parse(functionObj.arguments)
                     const tool_call_id = chunk.data.choices[0].delta.toolCalls[0].id
                     console.log(functionName)
                     const resultFromTool = await availableFunctions[functionName](functionArguments)
-                    messages.push({role: 'system', content: resultFromTool, toolCallId: tool_call_id})
+                    messages.push({role: 'assistant', toolCalls: [{id: tool_call_id, function: functionObj}]})
+                    messages.push({role: 'tool', content: resultFromTool, toolCallId: tool_call_id})
                 } else {
                     process.stdout.write(chunk.data.choices[0].delta.content)
                     result += chunk.data.choices[0].delta.content
