@@ -57,43 +57,35 @@ interactWithUser()
 async function agent(query) {
     // message array to store the conversation with the agent
     messages.push({role: 'user', content: query})
-    // const messages = [
-    //     {role: 'user', content: query}
-    // ]
     
     for (let i = 0; i < 5; i++){
 
         //response from the agent.
         const response =  await mistralClient.chat.stream({
-            
             model: 'mistral-large-latest',
             messages: messages,
             tools: tools,
             stream: true
-        
         })
-        console.log('called twice');
         
         // Handling the chunks of response
         try{
-            
             for await(const chunk of response){
-                if(chunk.data.choices[0].finishReason === 'stop'){
+                if(chunk.data.choices[0].finishReason === 'stop'){ // If it is the last chunk
                     process.stdout.write(chunk.data.choices[0].delta.content)
                     result += `${chunk.data.choices[0].delta.content}`
                     messages.push({role: 'assistant', content: result})
                     console.log()
                     return
-                } else if(chunk.data.choices[0].finishReason === 'tool_calls') {
+                } else if(chunk.data.choices[0].finishReason === 'tool_calls') { // If the AI model called a tool
                     const functionObj = chunk.data.choices[0].delta.toolCalls[0].function
                     const functionName = functionObj.name
                     const functionArguments = JSON.parse(functionObj.arguments)
                     const tool_call_id = chunk.data.choices[0].delta.toolCalls[0].id
-                    console.log(functionName)
                     const resultFromTool = await availableFunctions[functionName](functionArguments)
                     messages.push({role: 'assistant', toolCalls: [{id: tool_call_id, function: functionObj}]})
                     messages.push({role: 'tool', content: resultFromTool, toolCallId: tool_call_id})
-                } else {
+                } else { // If the AI model got a prompt that does not require to call a tool
                     process.stdout.write(chunk.data.choices[0].delta.content)
                     result += chunk.data.choices[0].delta.content
                 }
@@ -113,15 +105,15 @@ async function generateResponse() {
 }
 
 // debounce function to handle the rate limit of the mistral api call
-function debounce(func, delay) {
-    let timeoutId
-    return async function(...args) {
-        const context = this
-        if(timeoutId) clearTimeout(timeoutId)
-        timeoutId = setTimeout(() => func.apply(context, args),delay)
-        if(args[0]) args[0]()
-    }
-}
+// function debounce(func, delay) {
+//     let timeoutId
+//     return async function(...args) {
+//         const context = this
+//         if(timeoutId) clearTimeout(timeoutId)
+//         timeoutId = setTimeout(() => func.apply(context, args),delay)
+//         if(args[0]) args[0]()
+//     }
+// }
 
-const debounceOutput = debounce(generateResponse, 1000)
+// const debounceOutput = debounce(generateResponse, 1000)
 

@@ -36,7 +36,7 @@ export const tools = [
         "type": "function",
         "function": {
             "name": "read_shell_history",
-            "description": "Get history of commands which consists of the past 50 commands run",
+            "description": "Get history of commands which consists of the past 50 commands run.",
             "parameters": {}
         },
     }
