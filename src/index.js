@@ -14,7 +14,12 @@ const mistralClient = new Mistral({apiKey: apiKey})
 // Function to create an interface to read and write data.
 let userInput
 
-const messages = []
+const messages = [
+    {
+        role: 'system',
+        content: "When asked about the content of specific files like '/etc/resolv.conf or /proc/meminfo ' or a question that requires to read files of a specific file, first check the files on the machine using the available tools."
+    }
+]
 let result = ''
 let availableFunctions = {
     read_shell_history,
