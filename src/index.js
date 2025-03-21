@@ -15,6 +15,7 @@ const mistralClient = new Mistral({apiKey: apiKey})
 let userInput
 
 const messages = []
+let result = ''
 let availableFunctions = {read_shell_history}
 const rw = readline.createInterface({
     input: process.stdin,
