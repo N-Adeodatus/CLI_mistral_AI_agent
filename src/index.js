@@ -1,10 +1,11 @@
 import { Mistral } from "@mistralai/mistralai";
 import readline from "node:readline"
 import dotenv from "dotenv"
+import { read_shell_history, tools } from "./tools.js";
 
 dotenv.config()
 
-const apiKey = process.env.VITE_MISTRAL_API
+const apiKey = "POjCwfVcJKDVERloIQnrmxndl1GeMjqb"
 console.log('Type "exit", ctrl+c or ctrl+d to exit');
 console.log('How can I Help?')
 
@@ -14,22 +15,26 @@ const mistralClient = new Mistral({apiKey: apiKey})
 let userInput
 
 const messages = []
+let availableFunctions = {read_shell_history}
 const rw = readline.createInterface({
     input: process.stdin,
     output: process.stdout
 })
 // Interface to interact with the user.
 async function interactWithUser() {
-    const prompt = await new Promise((resolve) => {
-        rw.question( "\nAsk AI: \n", (answer) => {
-            if(answer !== '') {
-                resolve(answer)
-            } else {
-                console.log("Please enter a prompt")
-                interactWithUser()
-            }
+
+    
+        const prompt = await new Promise((resolve) => {
+            rw.question( "\nAsk AI: \n", (answer) => {
+                if(answer !== '') {
+                    resolve(answer)
+                    console.log()
+                } else {
+                    console.log("Please enter a prompt")
+                    interactWithUser()
+                }
+            })
         })
-    })
 
     if(prompt.toLowerCase() === "exit"){
         console.log("Good bye😊!")
@@ -48,34 +53,44 @@ interactWithUser()
 async function agent(query) {
     // message array to store the conversation with the agent
     messages.push({role: 'user', content: query})
-    // const messages = [
-    //     {role: 'user', content: query}
-    // ]
     
-    //response from the agent.
-    const response =  await mistralClient.chat.stream({
-        model: 'mistral-large-latest',
-        messages: messages,
-        stream: true
-    })
+    for (let i = 0; i < 5; i++){
 
-    // Handling the chunks of response
-    try{
-        let result = ''
-        for await(const chunk of response){
-            process.stdout.write(chunk.data.choices[0].delta.content)
-            if(chunk.data.choices[0].finishReason === 'stop'){
-                result += `${chunk.data.choices[0].delta.content}`
-                console.log()
-            } else {
-                result += chunk.data.choices[0].delta.content
+        //response from the agent.
+        const response =  await mistralClient.chat.stream({
+            model: 'mistral-large-latest',
+            messages: messages,
+            tools: tools,
+            stream: true
+        })
+        
+        // Handling the chunks of response
+        try{
+            for await(const chunk of response){
+                if(chunk.data.choices[0].finishReason === 'stop'){ // If it is the last chunk
+                    process.stdout.write(chunk.data.choices[0].delta.content)
+                    result += `${chunk.data.choices[0].delta.content}`
+                    messages.push({role: 'assistant', content: result})
+                    console.log()
+                    return
+                } else if(chunk.data.choices[0].finishReason === 'tool_calls') { // If the AI model called a tool
+                    const functionObj = chunk.data.choices[0].delta.toolCalls[0].function
+                    const functionName = functionObj.name
+                    const functionArguments = JSON.parse(functionObj.arguments)
+                    const tool_call_id = chunk.data.choices[0].delta.toolCalls[0].id
+                    const resultFromTool = await availableFunctions[functionName](functionArguments)
+                    messages.push({role: 'assistant', toolCalls: [{id: tool_call_id, function: functionObj}]})
+                    messages.push({role: 'tool', content: resultFromTool, toolCallId: tool_call_id})
+                } else { // If the AI model got a prompt that does not require to call a tool
+                    process.stdout.write(chunk.data.choices[0].delta.content)
+                    result += chunk.data.choices[0].delta.content
+                }
             }
+             
         }
-        messages.push({role: 'assistant', content: result})
-        return result
-    }
-    catch(err){
-        console.error('An error occurred during handling the chunks of response:', err)
+        catch(err){
+            console.error('An error occurred during handling the chunks of response:', err)
+        }
     }
        
 }
@@ -86,15 +101,15 @@ async function generateResponse() {
 }
 
 // debounce function to handle the rate limit of the mistral api call
-function debounce(func, delay) {
-    let timeoutId
-    return async function(...args) {
-        const context = this
-        if(timeoutId) clearTimeout(timeoutId)
-        timeoutId = setTimeout(() => func.apply(context, args),delay)
-        if(args[0]) args[0]()
-    }
-}
+// function debounce(func, delay) {
+//     let timeoutId
+//     return async function(...args) {
+//         const context = this
+//         if(timeoutId) clearTimeout(timeoutId)
+//         timeoutId = setTimeout(() => func.apply(context, args),delay)
+//         if(args[0]) args[0]()
+//     }
+// }
 
-const debounceOutput = debounce(generateResponse, 1000)
+// const debounceOutput = debounce(generateResponse, 1000)
 
