@@ -1,7 +1,7 @@
 import { Mistral } from "@mistralai/mistralai";
 import readline from "node:readline"
 import dotenv from "dotenv"
-import { read_shell_history, tools } from "./tools.js";
+import { read_shell_history, tools, getInfoFromFileInWd, getInfoFromSpecificFile } from "./tools.js";
 
 dotenv.config()
 
@@ -16,7 +16,11 @@ let userInput
 
 const messages = []
 let result = ''
-let availableFunctions = {read_shell_history}
+let availableFunctions = {
+    read_shell_history,
+    getInfoFromFileInWd,
+    getInfoFromSpecificFile
+}
 const rw = readline.createInterface({
     input: process.stdin,
     output: process.stdout

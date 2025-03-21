@@ -1,5 +1,7 @@
 import os from "os"
 import fs from "fs/promises"
+import { existsSync } from "fs"
+import path from "path"
 import { resolve } from "path"
 
 function delay() {
@@ -31,6 +33,27 @@ export async function read_shell_history() {
     }   
 }
 
+export async function getInfoFromFileInWd({fileName}) {
+    await delay()
+    console.log("this is the file name",fileName)
+    const filePath = path.join(process.cwd(), fileName)
+    console.log(filePath)
+    if(!existsSync(filePath)){
+        return "File does not exist in the current working directory"
+    }
+    const fileContent = await fs.readFile(filePath, 'utf-8')
+    return fileContent
+}
+
+export async function getInfoFromSpecificFile({pathToFile}) {
+    await delay()
+    if(!existsSync(pathToFile)){
+        return "File does not exist"
+    }
+    const fileContent = await fs.readFile(pathToFile, 'utf-8')
+    return fileContent
+}
+
 export const tools = [
     {
         "type": "function",
@@ -39,5 +62,39 @@ export const tools = [
             "description": "Get history of commands which consists of the past 50 commands run.",
             "parameters": {}
         },
-    }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "getInfoFromFileInWd",
+            "description": "Get The content of a file that is the current working directory",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "fileName": {
+                        "type": "string",
+                        "description": "The name of the file to read from the current working directory"
+                    }
+                },
+                "required": ["fileName"]
+            }
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "getInfoFromSpecificFile",
+            "description": "Get The content of a specified file from a given path.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "pathToFile": {
+                        "type": "string",
+                        "description": "The path to the file to read."
+                    }
+                },
+                "required": ["pathToFile"]
+            }
+        },
+    },
 ]
