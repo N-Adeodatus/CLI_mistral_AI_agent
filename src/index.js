@@ -64,8 +64,10 @@ async function interactWithUser() {
     userInput = prompt
     messages.push()
     // Ensure the debounce function finishes before continuing
-    await generateResponse()
-    interactWithUser()
+    // await generateResponse()
+    await debounceOutput()
+
+    // interactWithUser()
 }
 interactWithUser()
 
@@ -115,8 +117,9 @@ async function agent(query) {
                     result += `${chunk.data.choices[0].delta.content}`
                     messages.push({role: 'assistant', content: result})
                     console.log()
-                    // Remove the Enter key press event listener when the agent is done writing the response on the terminal.
-                    removeEnterKeyPressListener()
+
+                    removeEnterKeyPressListener() // Remove the Enter key press event listener when the agent is done writing the response on the terminal.
+                    interactWithUser() // Recreate the interface to interact with the user.
                     return
                 } else if(chunk.data.choices[0].finishReason === 'tool_calls') { // If the AI model called a tool
                     const functionObj = chunk.data.choices[0].delta.toolCalls[0].function
@@ -146,15 +149,15 @@ async function generateResponse() {
 }
 
 // debounce function to handle the rate limit of the mistral api call
-// function debounce(func, delay) {
-//     let timeoutId
-//     return async function(...args) {
-//         const context = this
-//         if(timeoutId) clearTimeout(timeoutId)
-//         timeoutId = setTimeout(() => func.apply(context, args),delay)
-//         if(args[0]) args[0]()
-//     }
-// }
+function debounce(func, delay) {
+    let timeoutId
+    return async function(...args) {
+        const context = this
+        if(timeoutId) clearTimeout(timeoutId)
+        timeoutId = setTimeout(() => func.apply(context, args),delay)
+        if(args[0]) args[0]()
+    }
+}
 
-// const debounceOutput = debounce(generateResponse, 1000)
+const debounceOutput = debounce(generateResponse, 1000)
 
