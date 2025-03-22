@@ -29,6 +29,7 @@ const messages = [
 // When asked about the content of specific files like '/etc/resolv.conf or /proc/meminfo ' or a question that requires to read files of a specific file, first check the files on the machine using the available tools.
 //  because you could not find it in the current working directory and it does not have a commonly known path on all Linux based computers, so that you can find it and be able to provide information about it.
 let result = ''
+let stopResponse = false // flag to stop the response from the agent when the user types enter while the agent is writing the response on the terminal.
 let availableFunctions = {
     read_shell_history,
     getInfoFromFileInWd,
@@ -68,12 +69,34 @@ async function interactWithUser() {
 }
 interactWithUser()
 
+// Function to handle the enter key press when the agent is writting the response on the terminal.
+function handleEnterKeyPress(str, key) {
+    if(key.name === 'return') {
+        stopResponse = true
+        interactWithUser()
+    }
+}
+
+// Function to add Enter key event listener.
+function addEnterKeyPressListener() {
+    readline.emitKeypressEvents(process.stdin)
+    process.stdin.on("keypress", handleEnterKeyPress)
+}
+
+// Function to remove the Enter key event listener.
+function removeEnterKeyPressListener() {
+    process.stdin.removeListener("keypress", handleEnterKeyPress)
+}
+
 async function agent(query) {
+    // Add Enter key press event listener when the agent is writing the response on the terminal.
+    addEnterKeyPressListener()
+    stopResponse = false
     // message array to store the conversation with the agent
     messages.push({role: 'user', content: query})
     
     for (let i = 0; i < 5; i++){
-
+        
         //response from the agent.
         const response =  await mistralClient.chat.stream({
             model: 'mistral-large-latest',
@@ -85,11 +108,15 @@ async function agent(query) {
         // Handling the chunks of response
         try{
             for await(const chunk of response){
+                if(stopResponse) return // if the user types enter while the agent is writing the response on the terminal, stop the response from the agent.
+
                 if(chunk.data.choices[0].finishReason === 'stop'){ // If it is the last chunk
                     process.stdout.write(chunk.data.choices[0].delta.content)
                     result += `${chunk.data.choices[0].delta.content}`
                     messages.push({role: 'assistant', content: result})
                     console.log()
+                    // Remove the Enter key press event listener when the agent is done writing the response on the terminal.
+                    removeEnterKeyPressListener()
                     return
                 } else if(chunk.data.choices[0].finishReason === 'tool_calls') { // If the AI model called a tool
                     const functionObj = chunk.data.choices[0].delta.toolCalls[0].function
