@@ -21,12 +21,13 @@ const messages = [
             When asked about the content of any file with the root directory '/' as its ancestor (e.g., '/etc/filename', '/proc/dirname/filename', '/var/log/filename', '/home/user/file', etc.), first read the file on the machine using the available tools.
             If asked about the content a file whose whose path is not commonly known or you do not know the path to, first look for it in the current working directory and read it using the appropriate tool.
             If file is not found in the current working directory, Then tell the user that the the file not being in the current working directory is why the file could not be found.   
-            Then ask the user to provide a path to the file because you could not find it in the current working directory and it does not have a commonly known path on all Linux based computers, so that you can find it and be able to provide information about it.
+            Then ask the user to provide a path to the file.
         `
     } 
 ]
 // the previous content for system role in messages array:
 // When asked about the content of specific files like '/etc/resolv.conf or /proc/meminfo ' or a question that requires to read files of a specific file, first check the files on the machine using the available tools.
+//  because you could not find it in the current working directory and it does not have a commonly known path on all Linux based computers, so that you can find it and be able to provide information about it.
 let result = ''
 let availableFunctions = {
     read_shell_history,

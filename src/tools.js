@@ -9,6 +9,7 @@ function delay() {
 }
 
 export async function read_shell_history() {
+    console.log('read_shell_history run')
     await delay()
     let historyFile
     const shell = process.env.ComSpec
@@ -26,7 +27,7 @@ export async function read_shell_history() {
     try {
         const data = await fs.readFile(historyFile, 'utf-8')
         const commands = data.trim().split('\n').slice(-50).join('\n')
-        // console.log(commands)
+         console.log('these are the commands',commands)
         return commands
     } catch (error) {
         console.log(`Error reading file: ${err}`)
@@ -34,9 +35,9 @@ export async function read_shell_history() {
 }
 
 export async function getInfoFromFileInWd({fileName}) {
+    console.log('getInfoFromFileInWd is called')
     await delay()
     const filePath = path.join(process.cwd(), fileName)
-    console.log(filePath)
     if(!existsSync(filePath)){
         return "File does not exist in the current working directory"
     }
@@ -45,6 +46,7 @@ export async function getInfoFromFileInWd({fileName}) {
 }
 
 export async function getInfoFromSpecificFile({pathToFile}) {
+    console.log('getInfoFromSpecificFile is called')
     await delay()
     if(!existsSync(pathToFile)){
         return "File does not exist"
@@ -58,7 +60,7 @@ export const tools = [
         "type": "function",
         "function": {
             "name": "read_shell_history",
-            "description": "Get history of commands which consists of the past 50 commands run.",
+            "description": "Get history of commands which consists of the past 50 most recent commands run from the .bash_history file.",
             "parameters": {}
         },
     },
