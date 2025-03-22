@@ -35,7 +35,6 @@ export async function read_shell_history() {
 
 export async function getInfoFromFileInWd({fileName}) {
     await delay()
-    console.log("this is the file name",fileName)
     const filePath = path.join(process.cwd(), fileName)
     console.log(filePath)
     if(!existsSync(filePath)){
