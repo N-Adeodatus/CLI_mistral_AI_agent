@@ -9,7 +9,6 @@ function delay() {
 }
 
 export async function read_shell_history() {
-    console.log('read_shell_history run')
     await delay()
     let historyFile
     const shell = process.env.ComSpec
@@ -35,7 +34,6 @@ export async function read_shell_history() {
 }
 
 export async function getInfoFromFileInWd({fileName}) {
-    console.log('getInfoFromFileInWd is called')
     await delay()
     const filePath = path.join(process.cwd(), fileName)
     if(!existsSync(filePath)){
@@ -46,7 +44,6 @@ export async function getInfoFromFileInWd({fileName}) {
 }
 
 export async function getInfoFromSpecificFile({pathToFile}) {
-    console.log('getInfoFromSpecificFile is called')
     await delay()
     if(!existsSync(pathToFile)){
         return "File does not exist"
